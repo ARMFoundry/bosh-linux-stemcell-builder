@@ -17,6 +17,9 @@ fi
 if is_ppc64le; then
   # ppc64le uses grub2
   pkg_mgr install grub2
+elif is_arm64; then
+  # arm64v8 uses grub-efi-arm64
+  pkg_mgr install grub-efi-arm64
 elif pkg_exists $preferred; then
   pkg_mgr install $preferred
 elif pkg_exists $fallback; then

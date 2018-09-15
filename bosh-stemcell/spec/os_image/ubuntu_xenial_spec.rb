@@ -95,7 +95,7 @@ describe 'Ubuntu 16.04 OS image', os_image: true do
 
   describe 'base_apt' do
     describe file('/etc/apt/sources.list') do
-      if Bosh::Stemcell::Arch.ppc64le?
+      if Bosh::Stemcell::Arch.ppc64le? || Bosh::Stemcell::Arch.arm64v8?
         its(:content) { should match 'deb http://ports.ubuntu.com/ubuntu-ports/ xenial main restricted' }
         its(:content) { should match 'deb http://ports.ubuntu.com/ubuntu-ports/ xenial-updates main restricted' }
         its(:content) { should match 'deb http://ports.ubuntu.com/ubuntu-ports/ xenial universe' }
@@ -186,7 +186,7 @@ describe 'Ubuntu 16.04 OS image', os_image: true do
       uuid-dev
       wget
       zip
-    ].reject { |pkg| Bosh::Stemcell::Arch.ppc64le? && ((pkg == 'rsyslog-mmjsonparse') || (pkg == 'rsyslog-gnutls') || (pkg == 'rsyslog-relp')) }.each do |pkg|
+    ].reject { |pkg| (Bosh::Stemcell::Arch.ppc64le? || Bosh::Stemcell::Arch.arm64v8?) && ((pkg == 'rsyslog-mmjsonparse') || (pkg == 'rsyslog-gnutls') || (pkg == 'rsyslog-relp')) }.each do |pkg|
       describe package(pkg) do
         it { should be_installed }
       end
@@ -239,17 +239,32 @@ describe 'Ubuntu 16.04 OS image', os_image: true do
   end
 
   context 'installed by system_grub' do
-    if Bosh::Stemcell::Arch.ppc64le?
-      %w[
-        grub2
-      ].each do |pkg|
-        describe package(pkg) do
-          it { should be_installed }
+    if Bosh::Stemcell::Arch.ppc64le? || Bosh::Stemcell::Arch.arm64v8?
+      if Bosh::Stemcell::Arch.ppc64le?
+        %w[
+          grub2
+        ].each do |pkg|
+          describe package(pkg) do
+            it { should be_installed }
+          end
         end
-      end
-      %w[grub grubenv grub.chrp].each do |grub_file|
-        describe file("/boot/grub/#{grub_file}") do
-          it { should be_file }
+        %w[grub grubenv grub.chrp].each do |grub_file|
+          describe file("/boot/grub/#{grub_file}") do
+            it { should be_file }
+          end
+        end
+      else
+        %w[
+          grub-efi-arm64
+        ].each do |pkg|
+          describe package(pkg) do
+            it { should be_installed }
+          end
+        end
+        %w[menu.lst unicode.pf2].each do |grub_file|
+          describe file("/boot/grub/#{grub_file}") do
+            it { should be_file }
+          end
         end
       end
     else
@@ -320,8 +335,14 @@ EOF
   end
 
   context 'PAM configuration' do
-    describe file('/lib/x86_64-linux-gnu/security/pam_cracklib.so') do
-      it { should be_file }
+    if Bosh::Stemcell::Arch.arm64v8?
+      describe file('/lib/aarch64-linux-gnu/security/pam_cracklib.so') do
+        it { should be_file }
+      end
+    else
+      describe file('/lib/x86_64-linux-gnu/security/pam_cracklib.so') do
+        it { should be_file }
+      end
     end
 
     describe file('/etc/pam.d/common-password') do

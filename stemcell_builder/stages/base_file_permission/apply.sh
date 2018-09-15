@@ -14,6 +14,7 @@ chown root:root $chroot/etc/shadow
 
 # only for CentOS
 chmod 0755 $chroot/lib
+mkdir -p $chroot/lib64
 chmod 0755 $chroot/lib64
 
 # remove setuid binaries - except su/sudo (sudoedit is hardlinked)

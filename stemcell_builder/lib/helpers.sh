@@ -75,3 +75,11 @@ function is_ppc64le() {
     return 1
   fi
 }
+
+function is_arm64() {
+  if [ `uname -m` == "aarch64" ]; then
+    return 0
+  else
+    return 1
+  fi
+}

@@ -13,5 +13,8 @@ module Bosh::Stemcell
       arch == 'x86_64'
     end
 
+    def self.arm64v8?
+      arch == 'aarch64'
+    end
   end
 end

@@ -37,13 +37,18 @@ module Bosh
       def manifest(disk_format)
         infrastructure = definition.infrastructure
 
+        operatingsystem = "#{definition.operating_system.name}-#{definition.operating_system.version}"
+	if Bosh::Stemcell::Arch.arm64v8?
+	  operatingsystem = "#{definition.operating_system.name}-#{definition.operating_system.version}-arm64v8"
+	end
+
         stemcell_name = "bosh-#{definition.stemcell_name(disk_format)}"
         {
           'name' => stemcell_name,
           'version' => version.to_s,
           'bosh_protocol' => 1,
           'sha1' => image_checksum,
-          'operating_system' => "#{definition.operating_system.name}-#{definition.operating_system.version}",
+          'operating_system' => operatingsystem,
           'stemcell_formats' => infrastructure.stemcell_formats,
           'cloud_properties' => manifest_cloud_properties(disk_format, infrastructure, stemcell_name)
         }
@@ -53,6 +58,10 @@ module Bosh
         architecture = 'x86_64'
         if Bosh::Stemcell::Arch.ppc64le?
           architecture = 'ppc64'
+        end
+
+        if Bosh::Stemcell::Arch.arm64v8?
+          architecture = 'arm64v8'
         end
 
         {

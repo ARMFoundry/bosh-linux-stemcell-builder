@@ -43,7 +43,7 @@ if [[ "${DISTRIB_CODENAME}" == 'trusty' ]]; then
   "
 fi
 
-if ! is_ppc64le; then
+if ! is_ppc64le && ! is_arm64; then
   run_in_chroot $chroot "add-apt-repository ppa:adiscon/v8-stable"
   pkg_mgr install "rsyslog rsyslog-gnutls rsyslog-mmjsonparse rsyslog-relp"
 
@@ -64,7 +64,12 @@ if ! is_ppc64le; then
     fi
   "
 else
-  pkg_mgr install "libsystemd-journal-dev libestr-dev libjson0 libjson0-dev uuid-dev python-docutils libcurl4-openssl-dev"
+  if [[ "${DISTRIB_CODENAME}" == 'trusty' ]]; then
+     pkg_mgr install "libsystemd-journal-dev libestr-dev libjson0 libjson0-dev uuid-dev python-docutils libcurl4-openssl-dev"
+  else 
+     #pkg_mgr install "pkg-config libestr-dev libjson0 libjson0-dev uuid-dev python-docutils libcurl4-openssl-dev"
+     pkg_mgr install "pkg-config libjson0 libjson0-dev uuid-dev python-docutils libcurl4-openssl-dev libgnutls-dev"
+  fi
 
   function check_md5 {
     result=`run_in_chroot ${chroot} "cd /tmp; md5sum ${1}"`
@@ -76,6 +81,7 @@ else
     fi
   }
 
+  if is_ppc64le || is_arm64; then
   run_in_chroot $chroot "
     cd /tmp
     # on ppc64le compile from source as the .deb packages are not available
@@ -111,6 +117,7 @@ else
     cd /tmp
     rm -rf liblogging-* librelp-* rsyslog-*
   "
+  fi
 fi
 
 if [ ${DISTRIB_CODENAME} == 'xenial' ]; then

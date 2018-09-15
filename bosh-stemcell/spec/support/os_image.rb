@@ -1,5 +1,6 @@
 require 'rspec/core/formatters/console_codes'
 require 'shellout_types/chroot'
+require 'tmpdir'
 require_relative 'shellout_type_assertions'
 
 RSpec.configure do |config|

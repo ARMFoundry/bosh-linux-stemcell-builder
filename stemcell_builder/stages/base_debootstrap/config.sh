@@ -22,6 +22,9 @@ base_debootstrap_arch=amd64
 if is_ppc64le; then
   base_debootstrap_arch=ppc64el
 fi
+if is_arm64; then
+  base_debootstrap_arch=arm64
+fi
 
 if [ -z "${base_debootstrap_suite:-}" ]
 then

@@ -30,6 +30,9 @@ if [ "${os_type}" == "ubuntu" ] && [ "${DISTRIB_CODENAME}" == "trusty" ]; then
   if is_ppc64le; then
     curl -L -o bosh-agent "https://s3.amazonaws.com/bosh-agent-binaries/go-1.8/bosh-agent-2.135.0-linux-ppc64le"
     echo "02a67e1ed56eb0cd48604aaecb9e71c315ff3f886ee757d8c2154b6c061702d7  bosh-agent" | shasum -a 256 -c -
+  elif is_arm64; then
+    curl -L -o bosh-agent "https://s3.amazonaws.com/rootfs-armhf/bosh-agent-2.54-linux-arm64v8"
+    echo "3a70d862e92e758a8385d32bbf60d492b17b5c2e8cfd1eacf46a2c95f31cb696  bosh-agent" | shasum -a 256 -c -
   else
     curl -L -o bosh-agent "https://s3.amazonaws.com/bosh-agent-binaries/go-1.8/bosh-agent-2.135.0-linux-amd64"
     echo "81a2876d705e23fb5d58c9264ad23ac708423069981324194d95ff5670ae1af0  bosh-agent" | shasum -a 256 -c -
@@ -38,6 +41,9 @@ else
   if is_ppc64le; then
     curl -L -o bosh-agent "https://s3.amazonaws.com/bosh-agent-binaries/bosh-agent-2.135.0-linux-ppc64le"
     echo "228ce01f505074c70f26b39dcdc439610cd65198904eb8715b9553cae70b0158  bosh-agent" | shasum -a 256 -c -
+  elif is_arm64; then
+    curl -L -o bosh-agent "https://s3.amazonaws.com/rootfs-armhf/bosh-agent-2.54-linux-arm64v8"
+    echo "3a70d862e92e758a8385d32bbf60d492b17b5c2e8cfd1eacf46a2c95f31cb696  bosh-agent" | shasum -a 256 -c -
   else
     curl -L -o bosh-agent "https://s3.amazonaws.com/bosh-agent-binaries/bosh-agent-2.135.0-linux-amd64"
     echo "b0b0127db2c2edade8c09e863c31f89e099f92ed40fc52e1c28e908fade92001  bosh-agent" | shasum -a 256 -c -
@@ -54,8 +60,13 @@ cd $assets_dir
 rm -rf davcli
 mkdir davcli
 current_version=0.0.26
-curl -L -o davcli/davcli https://s3.amazonaws.com/davcli/davcli-${current_version}-linux-amd64
-echo "cd75e886b4f5d27ce41841d5cc902fe64bab7b78 davcli/davcli" | sha1sum -c -
+if is_arm64; then
+  curl -L -o davcli/davcli https://s3.amazonaws.com/rootfs-armhf/davcli-${current_version}-linux-arm64v8
+  echo "56cd19a09f4d2a27c10d03b16cd60ff2de415ed7  davcli/davcli" | sha1sum -c -
+else
+  curl -L -o davcli/davcli https://s3.amazonaws.com/davcli/davcli-${current_version}-linux-amd64
+  echo "cd75e886b4f5d27ce41841d5cc902fe64bab7b78 davcli/davcli" | sha1sum -c -
+fi
 mv davcli/davcli $chroot/var/vcap/bosh/bin/bosh-blobstore-dav
 chmod +x $chroot/var/vcap/bosh/bin/bosh-blobstore-dav
 
