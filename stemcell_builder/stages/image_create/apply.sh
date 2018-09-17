@@ -52,6 +52,7 @@ add_on_exit "losetup --verbose --detach ${device}"
 
 if is_ppc64le || is_arm64; then
   device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p2 " | grep -v "p1" | cut -d" " -f3)
+  boot_device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p1 " | cut -d" " -f3)
 else
   device_partition=$(kpartx -sav ${device} | grep "^add" | cut -d" " -f3)
 fi
@@ -63,7 +64,6 @@ loopback_dev="/dev/mapper/${device_partition}"
 mkfs.ext4 ${loopback_dev}
 # Format EFI partition
 if is_arm64; then
-  boot_device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p1 " | grep -v "p2 " | cut -d" " -f3)
   loopback_boot_dev="/dev/mapper/${boot_device_partition}"
 
   apt-get install -y dosfstools
