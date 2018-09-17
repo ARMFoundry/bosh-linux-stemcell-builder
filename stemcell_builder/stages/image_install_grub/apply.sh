@@ -24,11 +24,19 @@ add_on_exit "losetup --verbose --detach ${device}"
 
 if ! is_ppc64le; then
 
-  device_partition=$(kpartx -sav ${device} | grep "^add" | cut -d" " -f3)
+  if is_arm64; then
+    boot_device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p1 " | grep -v "p2 " | cut -d" " -f3)
+    device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p2 " | cut -d" " -f3)
+
+    loopback_boot_dev="/dev/mapper/${boot_device_partition}"
+    loopback_dev="/dev/mapper/${device_partition}"
+  else
+    device_partition=$(kpartx -sav ${device} | grep "^add" | cut -d" " -f3)
+
+    loopback_dev="/dev/mapper/${device_partition}"
+  fi
+
   add_on_exit "kpartx -dv ${device}"
-
-  loopback_dev="/dev/mapper/${device_partition}"
-
   # Mount partition
   image_mount_point=${work}/mnt
   mkdir -p ${image_mount_point}
@@ -52,8 +60,13 @@ if ! is_ppc64le; then
   # Generate random password
   random_password=$(tr -dc A-Za-z0-9_ < /dev/urandom | head -c 16)
 
+  grub2name="grub2"
+  if is_arm64; then
+    grub2name="grub"
+  fi
+  
   # Install bootloader
-  if [ -x ${image_mount_point}/usr/sbin/grub2-install ]; then # GRUB 2
+  if [ -x ${image_mount_point}/usr/sbin/${grub2name}-install ]; then # GRUB 2
 
     # GRUB 2 needs to operate on the loopback block device for the whole FS image, so we map it into the chroot environment
     touch ${image_mount_point}${device}
@@ -75,7 +88,15 @@ if ! is_ppc64le; then
     echo "(hd0) ${device}" > ${image_mount_point}/device.map
 
     # install bootsector into disk image file
-    run_in_chroot ${image_mount_point} "grub2-install -v --no-floppy --grub-mkdevicemap=/device.map --target=i386-pc ${device}"
+    target="i386-pc"
+    if is_arm64; then
+       mkdir -p ${image_mount_point}/boot/efi
+       mount -t vfat ${loopback_boot_dev} ${image_mount_point}/boot/efi
+       add_on_exit "umount ${image_mount_point}/boot/efi"
+
+       target="arm64-efi"
+    fi
+    run_in_chroot ${image_mount_point} ${grub2name}"-install -v --no-floppy --grub-mkdevicemap=/device.map --target=${target} ${device}"
 
     # Enable password-less booting in openSUSE, only editing the boot menu needs to be restricted
     if [ -f ${image_mount_point}/etc/SuSE-release ]; then
@@ -91,7 +112,7 @@ EOF
     fi
 
     # we use a random password to prevent user from editing the boot menu
-    pbkdf2_password=`run_in_chroot ${image_mount_point} "echo -e '${random_password}\n${random_password}' | grub2-mkpasswd-pbkdf2 | grep -Eo 'grub.pbkdf2.sha512.*'"`
+    pbkdf2_password=`run_in_chroot ${image_mount_point} "echo -e '${random_password}\n${random_password}' | ${grub2name}-mkpasswd-pbkdf2 | grep -Eo 'grub.pbkdf2.sha512.*'"`
     echo "\
 
 cat << EOF
@@ -100,11 +121,11 @@ password_pbkdf2 vcap $pbkdf2_password
 EOF" >> ${image_mount_point}/etc/grub.d/00_header
 
     # assemble config file that is read by grub2 at boot time
-    run_in_chroot ${image_mount_point} "GRUB_DISABLE_RECOVERY=true grub2-mkconfig -o /boot/grub2/grub.cfg"
+    run_in_chroot ${image_mount_point} "GRUB_DISABLE_RECOVERY=true ${grub2name}-mkconfig -o /boot/${grub2name}/grub.cfg"
 
     # set the correct root filesystem; use the ext2 filesystem's UUID
     device_uuid=$(dumpe2fs $loopback_dev | grep UUID | awk '{print $3}')
-    sed -i s%root=${loopback_dev}%root=UUID=${device_uuid}%g ${image_mount_point}/boot/grub2/grub.cfg
+    sed -i s%root=${loopback_dev}%root=UUID=${device_uuid}%g ${image_mount_point}/boot/${grub2name}/grub.cfg
 
     rm ${image_mount_point}/device.map
 

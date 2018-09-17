@@ -13,9 +13,15 @@ if is_ppc64le; then
   part_offset=2048s
   part_size=9MiB
 else
-  # Reserve the first 63 sectors for grub
-  part_offset=63s
-  part_size=$((${image_create_disk_size} - 1))
+  if is_arm64; then
+    # create 99MiB EFI partition, leave 2048s for GPT
+    part_offset=1MiB
+    part_size=100MiB
+  else
+    # Reserve the first 63 sectors for grub
+    part_offset=63s
+    part_size=$((${image_create_disk_size} - 1))
+  fi
 fi
 
 dd if=/dev/null of=${disk_image} bs=1M seek=${image_create_disk_size} 2> /dev/null
@@ -26,7 +32,14 @@ if is_ppc64le; then
   parted --script ${disk_image} set 1 prep on
   parted --script ${disk_image} mkpart primary ext4 $part_size 100%
 else
-  parted --script ${disk_image} mkpart primary ext2 $part_offset $part_size
+  if is_arm64; then
+    parted --script ${disk_image} mklabel gpt #should overwrite
+    parted --script ${disk_image} mkpart primary fat32 $part_offset $part_size
+    parted --script ${disk_image} set 1 boot on
+    parted --script ${disk_image} mkpart primary ext4 $part_size 100%
+  else
+    parted --script ${disk_image} mkpart primary ext2 $part_offset $part_size
+  fi
 fi
 
 
@@ -37,9 +50,8 @@ kpartx -dv ${disk_image}
 device=$(losetup --show --find ${disk_image})
 add_on_exit "losetup --verbose --detach ${device}"
 
-if is_ppc64le; then
-  device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p2 " | grep -v "p1" | cut -d" "
-  -f3)
+if is_ppc64le || is_arm64; then
+  device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p2 " | grep -v "p1" | cut -d" " -f3)
 else
   device_partition=$(kpartx -sav ${device} | grep "^add" | cut -d" " -f3)
 fi
@@ -49,6 +61,14 @@ loopback_dev="/dev/mapper/${device_partition}"
 
 # Format partition
 mkfs.ext4 ${loopback_dev}
+# Format EFI partition
+if is_arm64; then
+  boot_device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p1 " | grep -v "p2 " | cut -d" " -f3)
+  loopback_boot_dev="/dev/mapper/${boot_device_partition}"
+
+  apt-get install -y dosfstools
+  mkfs -t vfat ${loopback_boot_dev}
+fi
 
 # Mount partition
 image_mount_point=${work}/mnt

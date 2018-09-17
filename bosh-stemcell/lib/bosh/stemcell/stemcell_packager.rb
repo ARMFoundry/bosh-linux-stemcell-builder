@@ -61,7 +61,7 @@ module Bosh
         end
 
         if Bosh::Stemcell::Arch.arm64v8?
-          architecture = 'arm64v8'
+          architecture = 'aarch64'
         end
 
         {
