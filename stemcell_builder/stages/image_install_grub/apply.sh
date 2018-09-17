@@ -96,7 +96,8 @@ if ! is_ppc64le; then
 
        target="arm64-efi"
     fi
-    run_in_chroot ${image_mount_point} ${grub2name}"-install -v --no-floppy --grub-mkdevicemap=/device.map --target=${target} ${device}"
+    # --removable forces EFI image in /EFI/BOOT instead of /EFI/ubuntu  (NVRAM is not persisted)
+    run_in_chroot ${image_mount_point} ${grub2name}"-install -v --no-floppy --removable --grub-mkdevicemap=/device.map --target=${target} ${device}"
 
     # Enable password-less booting in openSUSE, only editing the boot menu needs to be restricted
     if [ -f ${image_mount_point}/etc/SuSE-release ]; then
