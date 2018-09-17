@@ -25,8 +25,9 @@ add_on_exit "losetup --verbose --detach ${device}"
 if ! is_ppc64le; then
 
   if is_arm64; then
-    boot_device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p1 " | grep -v "p2 " | cut -d" " -f3)
-    device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p2 " | cut -d" " -f3)
+
+    device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p2 " | grep -v "p1" | cut -d" " -f3)
+    boot_device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p1 " | cut -d" " -f3)
 
     loopback_boot_dev="/dev/mapper/${boot_device_partition}"
     loopback_dev="/dev/mapper/${device_partition}"
@@ -113,10 +114,10 @@ EOF
     fi
 
     # we use a random password to prevent user from editing the boot menu
-#    pbkdf2_password=`run_in_chroot ${image_mount_point} "echo -e '${random_password}\n${random_password}' | ${grub2name}-mkpasswd-pbkdf2 | grep -Eo 'grub.pbkdf2.sha512.*'"`
- #   echo "\
+    pbkdf2_password=`run_in_chroot ${image_mount_point} "echo -e '${random_password}\n${random_password}' | ${grub2name}-mkpasswd-pbkdf2 | grep -Eo 'grub.pbkdf2.sha512.*'"`
+    echo "\
 # to test grub, set a known password
-    pbkdf2_password="cloudc0w"
+    pbkdf2_password=`cloudc0w`
 
 cat << EOF
 set superusers=vcap
@@ -159,7 +160,7 @@ else
   # ppc64le guest images have a PReP partition followed by the file system
   # This and following changes in this file made with the help of Paulo Flabio Smorigo @ IBM
   boot_device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p1 " | grep -v "p2 " | cut -d" " -f3)
-  device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p2 " | cut -d" " -f3)
+  device_partition=$(kpartx -sav ${device} | grep "^add" | grep "p2 " | grep -v "p1 " | cut -d" " -f3)
   loopback_boot_dev="/dev/mapper/${boot_device_partition}"
   loopback_dev="/dev/mapper/${device_partition}"
 
