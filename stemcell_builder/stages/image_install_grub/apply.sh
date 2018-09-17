@@ -113,11 +113,11 @@ GRUB_CMDLINE_LINUX="vconsole.keymap=us net.ifnames=0 biosdevname=0 crashkernel=a
 EOF
     fi
 
+    # to test grub, set a known password
+    random_password=cloudc0w
     # we use a random password to prevent user from editing the boot menu
     pbkdf2_password=`run_in_chroot ${image_mount_point} "echo -e '${random_password}\n${random_password}' | ${grub2name}-mkpasswd-pbkdf2 | grep -Eo 'grub.pbkdf2.sha512.*'"`
     echo "\
-# to test grub, set a known password
-    pbkdf2_password=`cloudc0w`
 
 cat << EOF
 set superusers=vcap
