@@ -68,7 +68,7 @@ else
      pkg_mgr install "libsystemd-journal-dev libestr-dev libjson0 libjson0-dev uuid-dev python-docutils libcurl4-openssl-dev"
   else 
      #pkg_mgr install "pkg-config libestr-dev libjson0 libjson0-dev uuid-dev python-docutils libcurl4-openssl-dev"
-     pkg_mgr install "libsystemd-dev pkg-config libjson0 libjson0-dev uuid-dev python-docutils libcurl4-openssl-dev libgnutls-dev"
+     pkg_mgr install "libsystemd-dev libestr-dev pkg-config libjson0 libjson0-dev uuid-dev python-docutils libcurl4-openssl-dev libgnutls-dev"
   fi
 
   function check_md5 {
