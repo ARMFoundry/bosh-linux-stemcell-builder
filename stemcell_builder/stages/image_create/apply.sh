@@ -61,7 +61,7 @@ add_on_exit "kpartx -dv ${device}"
 loopback_dev="/dev/mapper/${device_partition}"
 
 # Format partition
-mkfs.ext4 ${loopback_dev}
+mkfs.ext4 ${loopback_dev} -L rootfs
 # Format EFI partition
 if is_arm64; then
   loopback_boot_dev="/dev/mapper/${boot_device_partition}"

@@ -90,15 +90,18 @@ if ! is_ppc64le; then
 
     # install bootsector into disk image file
     target="i386-pc"
+    removable=""
     if is_arm64; then
        mkdir -p ${image_mount_point}/boot/efi
        mount -t vfat ${loopback_boot_dev} ${image_mount_point}/boot/efi
        add_on_exit "umount ${image_mount_point}/boot/efi"
 
        target="arm64-efi"
+
+        # --removable forces EFI image in /EFI/BOOT instead of /EFI/ubuntu  (NVRAM is not persisted)
+       removable="--removable"
     fi
-    # --removable forces EFI image in /EFI/BOOT instead of /EFI/ubuntu  (NVRAM is not persisted)
-    run_in_chroot ${image_mount_point} ${grub2name}"-install -v --no-floppy --removable --grub-mkdevicemap=/device.map --target=${target} ${device}"
+    run_in_chroot ${image_mount_point} ${grub2name}"-install -v --no-floppy ${removable} --grub-mkdevicemap=/device.map --target=${target} ${device}"
 
     # Enable password-less booting in openSUSE, only editing the boot menu needs to be restricted
     if [ -f ${image_mount_point}/etc/SuSE-release ]; then
@@ -108,9 +111,23 @@ if ! is_ppc64le; then
 GRUB_CMDLINE_LINUX="vconsole.keymap=us net.ifnames=0 crashkernel=auto selinux=0 plymouth.enable=0 console=ttyS0,115200n8 earlyprintk=ttyS0 rootdelay=300 audit=1 cgroup_enable=memory swapaccount=1"
 EOF
     else
+      if is_arm64; then
+        run_in_chroot ${image_mount_point} "sed -i 's/CLASS=\\\"--class gnu-linux --class gnu --class os\\\"/CLASS=\\\"--class gnu-linux --class gnu --class os --unrestricted\\\"/' /etc/grub.d/10_linux"
+
+      cat >${image_mount_point}/etc/default/grub <<EOF
+GRUB_DEFAULT=0
+GRUB_HIDDEN_TIMEOUT=0
+GRUB_HIDDEN_TIMEOUT_QUIET=true
+GRUB_TIMEOUT=10
+GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"
+GRUB_CMDLINE_LINUX=""
+EOF
+      else
       cat >${image_mount_point}/etc/default/grub <<EOF
 GRUB_CMDLINE_LINUX="vconsole.keymap=us net.ifnames=0 biosdevname=0 crashkernel=auto selinux=0 plymouth.enable=0 console=ttyS0,115200n8 earlyprintk=ttyS0 rootdelay=300 audit=1"
 EOF
+      fi
     fi
 
     # to test grub, set a known password
@@ -127,10 +144,14 @@ EOF" >> ${image_mount_point}/etc/grub.d/00_header
     # assemble config file that is read by grub2 at boot time
     run_in_chroot ${image_mount_point} "GRUB_DISABLE_RECOVERY=true ${grub2name}-mkconfig -o /boot/${grub2name}/grub.cfg"
 
-    # set the correct root filesystem; use the ext2 filesystem's UUID
-    device_uuid=$(dumpe2fs $loopback_dev | grep UUID | awk '{print $3}')
-    sed -i s%root=${loopback_dev}%root=UUID=${device_uuid}%g ${image_mount_point}/boot/${grub2name}/grub.cfg
-
+    # set the correct root filesystem;
+    if is_arm64; then
+       sed -i s%root=${loopback_dev}%root=LABEL=rootfs%g ${image_mount_point}/boot/${grub2name}/grub.cfg
+    else
+       # set the correct root filesystem; use the ext2 filesystem's UUID
+       device_uuid=$(dumpe2fs $loopback_dev | grep UUID | awk '{print $3}')
+       sed -i s%root=${loopback_dev}%root=UUID=${device_uuid}%g ${image_mount_point}/boot/${grub2name}/grub.cfg
+    fi
     rm ${image_mount_point}/device.map
 
   else # Classic GRUB
