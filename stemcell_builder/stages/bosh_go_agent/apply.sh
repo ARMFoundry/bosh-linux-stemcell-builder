@@ -32,7 +32,7 @@ if [ "${os_type}" == "ubuntu" ] && [ "${DISTRIB_CODENAME}" == "trusty" ]; then
     echo "02a67e1ed56eb0cd48604aaecb9e71c315ff3f886ee757d8c2154b6c061702d7  bosh-agent" | shasum -a 256 -c -
   elif is_arm64; then
     curl -L -o bosh-agent "https://s3.amazonaws.com/rootfs-armhf/bosh-agent-2.54-linux-arm64v8"
-    echo "252d0bedba388cb6d5e8ecc4a8923e76e5c0faaba3f6144fb58602f73b0ce5de  bosh-agent" | shasum -a 256 -c -
+    echo "e54558558d7a66443cb8a56a3d25c2d4e8a0c07ee09e56e6291f0fa63163d062  bosh-agent" | shasum -a 256 -c -
   else
     curl -L -o bosh-agent "https://s3.amazonaws.com/bosh-agent-binaries/go-1.8/bosh-agent-2.135.0-linux-amd64"
     echo "81a2876d705e23fb5d58c9264ad23ac708423069981324194d95ff5670ae1af0  bosh-agent" | shasum -a 256 -c -
@@ -43,7 +43,7 @@ else
     echo "228ce01f505074c70f26b39dcdc439610cd65198904eb8715b9553cae70b0158  bosh-agent" | shasum -a 256 -c -
   elif is_arm64; then
     curl -L -o bosh-agent "https://s3.amazonaws.com/rootfs-armhf/bosh-agent-2.54-linux-arm64v8"
-    echo "252d0bedba388cb6d5e8ecc4a8923e76e5c0faaba3f6144fb58602f73b0ce5de  bosh-agent" | shasum -a 256 -c -
+    echo "e54558558d7a66443cb8a56a3d25c2d4e8a0c07ee09e56e6291f0fa63163d062  bosh-agent" | shasum -a 256 -c -
   else
     curl -L -o bosh-agent "https://s3.amazonaws.com/bosh-agent-binaries/bosh-agent-2.135.0-linux-amd64"
     echo "b0b0127db2c2edade8c09e863c31f89e099f92ed40fc52e1c28e908fade92001  bosh-agent" | shasum -a 256 -c -
