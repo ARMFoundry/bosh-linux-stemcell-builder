@@ -11,7 +11,7 @@ cat > $agent_settings_file <<JSON
   "Platform": {
     "Linux": {
       $(get_partitioner_type_mapping)
-      "CreatePartitionIfNoEphemeralDisk": true,
+      "CreatePartitionIfNoEphemeralDisk": false,
       "DevicePathResolutionType": "virtio"
     }
   },
